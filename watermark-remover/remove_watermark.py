@@ -150,13 +150,52 @@ def build_mask(height: int, width: int, x1: int, y1: int, x2: int, y2: int) -> n
     return mask
 
 
-def remove_watermark_frame(frame: np.ndarray, mask: np.ndarray, radius: int) -> np.ndarray:
-    return cv2.inpaint(frame, mask, radius, cv2.INPAINT_TELEA)
+def remove_watermark_frame(frame: np.ndarray, mask: np.ndarray,
+                           radius: int = 8, feather_px: int = 12) -> np.ndarray:
+    """
+    Remove the masked region using TELEA inpainting with smooth feathered edges.
+
+    Steps:
+      1. Slightly expand the mask so TELEA has more context around the watermark.
+      2. TELEA inpainting fills the region from surrounding pixels.
+      3. Bilateral filter smooths the inpainted patch (edge-preserving, not plain blur).
+      4. Distance-transform feather blends the inpainted patch back into the original
+         with a soft gradient at the boundary — no visible hard edges.
+    """
+    # 1. Expand mask a few pixels for better inpainting context
+    expand_k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask_expanded = cv2.dilate(mask, expand_k, iterations=2)
+
+    # 2. Inpaint
+    inpainted = cv2.inpaint(frame, mask_expanded, radius, cv2.INPAINT_TELEA)
+
+    # 3. Bilateral filter on the whole inpainted frame
+    #    (preserves edges, removes inpainting patchiness / colour banding)
+    smoothed = cv2.bilateralFilter(inpainted, d=11, sigmaColor=80, sigmaSpace=80)
+
+    # 4. Build feathered alpha from distance transform
+    #    dist=0 at mask edge → alpha=0 (keep original)
+    #    dist=feather_px inside → alpha=1 (use smoothed inpaint)
+    dist  = cv2.distanceTransform(mask, cv2.DIST_L2, maskSize=5)
+    alpha = np.clip(dist / feather_px, 0.0, 1.0).astype(np.float32)[:, :, np.newaxis]
+
+    mask_3d = (mask > 0)[:, :, np.newaxis].astype(np.float32)
+
+    orig_f     = frame.astype(np.float32)
+    smoothed_f = smoothed.astype(np.float32)
+
+    # Inside mask: feathered blend (original at edge → smoothed at centre)
+    inside  = smoothed_f * alpha + orig_f * (1.0 - alpha)
+    # Outside mask: keep original untouched
+    result  = inside * mask_3d + orig_f * (1.0 - mask_3d)
+
+    return np.clip(result, 0, 255).astype(np.uint8)
 
 
 # ── Preview ───────────────────────────────────────────────────────────────────
 
-def preview(cap, x1: int, y1: int, x2: int, y2: int, radius: int, input_path: str) -> None:
+def preview(cap, x1: int, y1: int, x2: int, y2: int,
+            radius: int, feather: int, input_path: str) -> None:
     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
     ret, frame = cap.read()
     if not ret:
@@ -164,7 +203,7 @@ def preview(cap, x1: int, y1: int, x2: int, y2: int, radius: int, input_path: st
 
     h, w = frame.shape[:2]
     mask    = build_mask(h, w, x1, y1, x2, y2)
-    cleaned = remove_watermark_frame(frame, mask, radius)
+    cleaned = remove_watermark_frame(frame, mask, radius, feather)
 
     marked = frame.copy()
     cv2.rectangle(marked, (x1, y1), (x2, y2), (0, 0, 255), 3)
@@ -182,7 +221,8 @@ def preview(cap, x1: int, y1: int, x2: int, y2: int, radius: int, input_path: st
 # ── Full video processing ─────────────────────────────────────────────────────
 
 def process_video(cap, input_path: str, output_path: str,
-                  x1: int, y1: int, x2: int, y2: int, radius: int) -> None:
+                  x1: int, y1: int, x2: int, y2: int,
+                  radius: int, feather: int) -> None:
     w     = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h     = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps   = cap.get(cv2.CAP_PROP_FPS)
@@ -201,7 +241,7 @@ def process_video(cap, input_path: str, output_path: str,
         ret, frame = cap.read()
         if not ret:
             break
-        writer.write(remove_watermark_frame(frame, mask, radius))
+        writer.write(remove_watermark_frame(frame, mask, radius, feather))
         if (i + 1) % 100 == 0:
             print(f"  {i+1}/{total} frames ({(i+1)/total*100:.1f}%)")
 
@@ -258,7 +298,8 @@ Examples:
     parser.add_argument("--y1",     type=int,   default=262,  help="Watermark top edge (manual)")
     parser.add_argument("--x2",     type=int,   default=718,  help="Watermark right edge (manual)")
     parser.add_argument("--y2",     type=int,   default=385,  help="Watermark bottom edge (manual)")
-    parser.add_argument("--radius", type=int,   default=5,    help="Inpaint radius (default: 5)")
+    parser.add_argument("--radius", type=int,   default=8,    help="Inpaint radius (default: 8)")
+    parser.add_argument("--feather",type=int,   default=12,   help="Edge feather width in pixels (default: 12)")
     parser.add_argument("--samples",type=int,   default=50,   help="Frames sampled for auto-detect (default: 50)")
     parser.add_argument("--stable", type=float, default=45.0, help="Max temporal std for auto-detect (default: 45)")
     parser.add_argument("--grad",   type=float, default=15.0, help="Min gradient for auto-detect (default: 15)")
@@ -282,14 +323,14 @@ Examples:
             print(f"Detected: x1={x1} y1={y1} x2={x2} y2={y2}")
 
     if args.preview:
-        preview(cap, x1, y1, x2, y2, args.radius, args.input)
+        preview(cap, x1, y1, x2, y2, args.radius, args.feather, args.input)
         cap.release()
         return
 
     if args.output is None:
         args.output = Path(args.input).stem + "_no_watermark.mp4"
 
-    process_video(cap, args.input, args.output, x1, y1, x2, y2, args.radius)
+    process_video(cap, args.input, args.output, x1, y1, x2, y2, args.radius, args.feather)
     cap.release()
 
 
