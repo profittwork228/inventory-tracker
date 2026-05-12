@@ -1,0 +1,6 @@
+[
+  { "start": 0,   "end": 8,   "label": "opening" },
+  { "start": 8,   "end": 18,  "label": "middle" },
+  { "start": 18,  "end": 28,  "label": "climax" },
+  { "start": 28,  "end": 35.88, "label": "ending" }
+]
