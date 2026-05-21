@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Generator Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { surface: "#1a1a2e", "surface-2": "#222238" }
+      }}
+    };
+  </script>
+  <style>
+    *,:before,:after { box-sizing: border-box; }
+    body { background: #0f0f1a; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #1a1a2e; }
+    ::-webkit-scrollbar-thumb { background: #4a4a70; border-radius: 3px; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    .fade-in { animation: fadeUp 0.3s ease-out forwards; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.75s linear infinite; }
+
+    .frame-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px) {
+      .frame-pair { grid-template-columns: 1fr; }
+    }
+
+    /* Native select dark style */
+    select option { background: #1a1a2e; color: #e5e7eb; }
+  </style>
+</head>
+<body class="text-gray-200 min-h-screen font-sans antialiased">
+
+<!-- ══ HEADER ════════════════════════════════════════════════════════════════ -->
+<header class="sticky top-0 z-50 border-b border-white/10 bg-[#1a1a2e]/80 backdrop-blur-md">
+  <div class="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600
+                flex items-center justify-center text-lg shadow-md select-none">✨</div>
+    <div>
+      <h1 class="text-base font-bold leading-none">
+        Content Generator <span class="text-violet-400">Pro</span>
+      </h1>
+      <p class="text-xs text-gray-500 mt-0.5">AI-powered · Start &amp; End Frame · 7 tipe konten</p>
+    </div>
+    <div class="ml-auto">
+      <a href="https://github.com/profittwork228/inventory-tracker"
+         target="_blank"
+         class="text-xs text-gray-500 hover:text-gray-300 transition px-3 py-1.5
+                bg-white/5 border border-white/10 rounded-lg">GitHub ↗</a>
+    </div>
+  </div>
+</header>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════════════════════ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-5 py-7">
+  <div class="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-7">
+
+    <!-- ── LEFT PANEL: selector + form ─────────────────────────────────── -->
+    <aside class="space-y-5">
+
+      <!-- Content-type grid -->
+      <div>
+        <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2.5">
+          Pilih Tipe Konten
+        </p>
+        <div class="grid grid-cols-2 gap-2" id="type-grid"></div>
+        <p class="text-[10px] text-gray-600 mt-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-violet-500 mr-1 align-middle"></span>
+          Tipe video menghasilkan start &amp; end frame
+        </p>
+      </div>
+
+      <!-- Dynamic form -->
+      <div id="form-container" class="hidden">
+        <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+          <div class="flex items-center gap-2 mb-5">
+            <span id="form-icon" class="text-2xl leading-none"></span>
+            <h2 id="form-title" class="font-bold text-white text-base leading-tight"></h2>
+          </div>
+          <form id="generate-form" class="space-y-3.5">
+            <div id="form-fields"></div>
+            <button type="submit"
+              class="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600
+                     hover:from-violet-500 hover:to-indigo-500
+                     text-white font-semibold rounded-xl transition-all shadow-lg
+                     flex items-center justify-center gap-2 mt-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Generate Konten
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Placeholder -->
+      <div id="form-placeholder"
+           class="bg-[#1a1a2e]/50 border border-dashed border-white/10 rounded-2xl
+                  p-10 text-center">
+        <div class="text-4xl mb-2 opacity-60">👆</div>
+        <p class="text-gray-600 text-sm">Pilih tipe konten di atas untuk memulai</p>
+      </div>
+    </aside>
+
+    <!-- ── RIGHT PANEL: results ─────────────────────────────────────────── -->
+    <section class="min-h-[500px]">
+
+      <!-- Empty state -->
+      <div id="result-empty"
+           class="flex flex-col items-center justify-center h-full min-h-[460px] text-center">
+        <div class="text-6xl mb-4">🚀</div>
+        <h3 class="text-xl font-bold text-white mb-2">Siap Generate Konten?</h3>
+        <p class="text-gray-500 max-w-sm text-sm leading-relaxed">
+          Pilih tipe konten, isi variabel, lalu klik Generate.<br>
+          Untuk konten video sistem akan membuat
+          <span class="text-violet-400 font-medium">start frame &amp; end frame</span>
+          untuk setiap scene.
+        </p>
+      </div>
+
+      <!-- Loading -->
+      <div id="result-loading"
+           class="hidden flex flex-col items-center justify-center h-full min-h-[460px]">
+        <div class="w-11 h-11 border-[3px] border-violet-500 border-t-transparent
+                    rounded-full spin mb-4"></div>
+        <p id="loading-msg" class="text-gray-400 text-sm">Generating…</p>
+      </div>
+
+      <!-- Results -->
+      <div id="result-content" class="hidden space-y-5">
+
+        <!-- Result header -->
+        <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p id="result-type-label"
+                 class="text-xs text-violet-400 font-semibold uppercase tracking-wider mb-1"></p>
+              <h2 id="result-title" class="text-xl font-bold text-white leading-snug"></h2>
+            </div>
+            <button id="copy-btn" onclick="copyContent()"
+              class="flex-shrink-0 px-3 py-2 text-xs bg-white/5 hover:bg-white/10
+                     border border-white/10 rounded-lg transition text-gray-400
+                     hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"
+                      stroke-width="2"/>
+              </svg>
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <!-- ── TEXT CONTENT RESULT ── -->
+        <div id="text-result-area" class="hidden space-y-4">
+          <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+            <h3 class="section-label mb-3">Konten Utama</h3>
+            <div id="main-content-text"
+                 class="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+              <h3 class="section-label mb-2">Alternatif 1</h3>
+              <p id="alt1-text" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"></p>
+            </div>
+            <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+              <h3 class="section-label mb-2">Alternatif 2</h3>
+              <p id="alt2-text" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"></p>
+            </div>
+          </div>
+          <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+            <h3 class="section-label mb-4">Tips &amp; Info</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
+              <div>
+                <p class="text-violet-400 font-medium mb-1.5">⏰ Best Time to Post</p>
+                <p id="best-time" class="text-gray-400"></p>
+              </div>
+              <div>
+                <p class="text-violet-400 font-medium mb-1.5">📈 Engagement Tips</p>
+                <ul id="eng-tips" class="text-gray-400 space-y-1 list-disc list-inside"></ul>
+              </div>
+              <div>
+                <p class="text-violet-400 font-medium mb-1.5">#️⃣ Hashtags</p>
+                <div id="hashtags-text" class="flex flex-wrap gap-1 mt-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VIDEO CONTENT RESULT ── -->
+        <div id="video-result-area" class="hidden space-y-4">
+
+          <!-- Hook -->
+          <div class="bg-[#1a1a2e] border border-violet-500/30 rounded-2xl p-5">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-lg">⚡</span>
+              <h3 class="text-xs font-bold text-violet-400 uppercase tracking-widest">
+                Opening Hook
+              </h3>
+            </div>
+            <p id="hook-text" class="text-white font-semibold text-base leading-snug"></p>
+          </div>
+
+          <!-- Script -->
+          <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+            <h3 class="section-label mb-3">Full Script</h3>
+            <div id="script-text"
+                 class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-mono
+                        bg-black/20 rounded-xl p-4 max-h-72 overflow-y-auto"></div>
+          </div>
+
+          <!-- Caption + CTA + Hashtags -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+              <h3 class="section-label mb-2">Caption</h3>
+              <p id="caption-text"
+                 class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"></p>
+            </div>
+            <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5 space-y-4">
+              <div>
+                <h3 class="section-label mb-2">Call to Action</h3>
+                <p id="cta-text" class="text-gray-300 text-sm font-medium"></p>
+              </div>
+              <div>
+                <h3 class="section-label mb-2">#️⃣ Hashtags</h3>
+                <div id="video-hashtags" class="flex flex-wrap gap-1"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scenes -->
+          <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+            <h3 class="section-label mb-4">Scene List</h3>
+            <div id="scenes-list" class="space-y-3"></div>
+          </div>
+
+          <!-- ── FRAME IMAGES ── -->
+          <div class="bg-[#1a1a2e] border border-white/10 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-1">
+              <div>
+                <h3 class="text-sm font-bold text-white">🎞️ Video Frame Images</h3>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  Pasangan start frame &amp; end frame per scene
+                </p>
+              </div>
+              <button id="generate-frames-btn" onclick="generateFrames()"
+                class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm
+                       font-semibold rounded-xl transition-all shadow-md
+                       flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Generate Frames
+              </button>
+            </div>
+
+            <div id="frames-loading"
+                 class="hidden text-center py-10">
+              <div class="w-8 h-8 border-2 border-violet-500 border-t-transparent
+                          rounded-full spin mx-auto mb-3"></div>
+              <p class="text-gray-500 text-sm">Rendering frame images…</p>
+            </div>
+
+            <div id="frames-container" class="space-y-7 mt-4"></div>
+          </div>
+
+        </div><!-- /video-result-area -->
+      </div><!-- /result-content -->
+    </section>
+  </div>
+</main>
+
+<style>
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #6b7280;
+  }
+</style>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
