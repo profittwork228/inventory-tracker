@@ -5,7 +5,7 @@ import json
 import base64
 import textwrap
 
-import anthropic
+import google.generativeai as genai
 from flask import Flask, render_template, request, jsonify
 from PIL import Image, ImageDraw, ImageFont
 
@@ -362,30 +362,24 @@ def api_generate():
     if ct_key not in CONTENT_TYPES:
         return jsonify({"error": "Tipe konten tidak valid"}), 400
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        return jsonify({"error": "ANTHROPIC_API_KEY tidak ditemukan di environment"}), 500
+        return jsonify({"error": "GEMINI_API_KEY tidak ditemukan di environment"}), 500
 
     ct = CONTENT_TYPES[ct_key]
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=("Anda adalah content creator profesional. "
+                                "Berikan output HANYA berupa JSON valid tanpa markdown code block.")
+        )
         prompt = (build_video_prompt(ct["label"], variables)
                   if ct["is_video"]
                   else build_text_prompt(ct["label"], variables))
 
-        resp = client.messages.create(
-            model="claude-opus-4-7",
-            max_tokens=4096,
-            system=[{
-                "type": "text",
-                "text": ("Anda adalah content creator profesional. "
-                         "Berikan output HANYA berupa JSON valid tanpa markdown code block."),
-                "cache_control": {"type": "ephemeral"},
-            }],
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        raw = resp.content[0].text.strip()
+        resp = model.generate_content(prompt)
+        raw = resp.text.strip()
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
 
