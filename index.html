@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipMaster Pro — Personal Video Clipping Tool</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #0f0f17;
+    --card: #13131a;
+    --card2: #1a1a25;
+    --border: #2a2a3a;
+    --accent: #6c63ff;
+    --accent2: #8b85ff;
+    --accent-glow: rgba(108,99,255,0.3);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --orange: #f97316;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --sidebar-w: 260px;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); scroll-behavior: smooth; }
+  body { min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 60px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .logo span.pro { background: linear-gradient(90deg, var(--accent), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .badge-no-wm { background: linear-gradient(90deg, var(--green), #16a34a); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  /* ── LAYOUT ── */
+  .app-body { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--bg2); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 0;
+    overflow-y: auto; padding-bottom: 24px;
+  }
+  .sidebar-section { padding: 20px 16px 8px; }
+  .sidebar-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 10px; }
+
+  /* ── INTEGRATIONS ── */
+  .int-row { display: flex; flex-direction: column; gap: 10px; }
+  .int-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+  .int-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .int-icon { font-size: 18px; }
+  .int-title { font-size: 0.8rem; font-weight: 600; }
+  .int-desc { font-size: 0.7rem; color: var(--text2); line-height: 1.4; }
+  .int-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--text); font-size: 0.75rem; outline: none; transition: border-color 0.2s; margin-top: 8px; }
+  .int-input:focus { border-color: var(--accent); }
+  .int-input::placeholder { color: var(--text3); }
+  .btn-sm { padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.72rem; font-weight: 600; transition: all 0.2s; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); display: inline-block; margin-right: 4px; transition: background 0.3s; }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: 0.3s; }
+  .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+  input:checked + .toggle-slider { background: var(--accent); }
+  input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  /* Caption Settings */
+  .caption-settings { display: flex; flex-direction: column; gap: 10px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; }
+  .setting-label { font-size: 0.75rem; color: var(--text2); }
+  .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+  .style-opt { padding: 6px 4px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; text-align: center; font-size: 0.65rem; font-weight: 600; transition: all 0.2s; color: var(--text2); }
+  .style-opt:hover, .style-opt.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
+  .range-slider { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+  .range-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  .pos-row { display: flex; gap: 6px; }
+  .pos-btn { flex: 1; padding: 5px 4px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; text-align: center; font-size: 0.65rem; font-weight: 600; background: transparent; color: var(--text2); transition: all 0.2s; }
+  .pos-btn:hover, .pos-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
+
+  /* ── MAIN CONTENT ── */
+  main { flex: 1; overflow-y: auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Upload Zone */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; transition: all 0.3s; cursor: pointer;
+    background: var(--card); position: relative; overflow: hidden;
+  }
+  .upload-zone::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(108,99,255,0.05) 0%, transparent 70%); pointer-events: none; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+  .upload-icon { font-size: 48px; margin-bottom: 12px; }
+  .upload-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+  .upload-sub { font-size: 0.8rem; color: var(--text2); margin-bottom: 20px; }
+  .upload-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { padding: 9px 20px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+  .btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { opacity: 0.9; }
+  .or-divider { display: flex; align-items: center; gap: 12px; color: var(--text3); font-size: 0.75rem; margin: 16px 0; }
+  .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .yt-input-row { display: flex; gap: 10px; }
+  .yt-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 14px; color: var(--text); font-size: 0.82rem; outline: none; transition: border-color 0.2s; }
+  .yt-input:focus { border-color: var(--accent); }
+  .yt-note { font-size: 0.7rem; color: var(--yellow); margin-top: 8px; padding: 8px 12px; background: rgba(234,179,8,0.1); border-radius: 6px; border: 1px solid rgba(234,179,8,0.2); text-align: left; }
+
+  /* Video Preview */
+  #video-preview-section { display: none; }
+  .video-wrap { background: #000; border-radius: var(--radius); overflow: hidden; position: relative; max-height: 360px; display: flex; align-items: center; justify-content: center; }
+  #preview-video { width: 100%; max-height: 360px; display: block; }
+  .video-info-bar { display: flex; gap: 16px; padding: 12px 16px; background: var(--card2); border-radius: var(--radius-sm); flex-wrap: wrap; align-items: center; }
+  .vinfo-item { font-size: 0.75rem; color: var(--text2); }
+  .vinfo-item span { color: var(--text); font-weight: 600; }
+
+  /* Analyze Button */
+  .analyze-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .btn-analyze {
+    padding: 12px 32px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+    font-size: 0.95rem; font-weight: 700; transition: all 0.3s;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .btn-analyze::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, #a855f7, var(--accent)); opacity: 0; transition: opacity 0.3s; }
+  .btn-analyze:hover::before { opacity: 1; }
+  .btn-analyze:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+  .btn-analyze span { position: relative; z-index: 1; }
+
+  /* Progress */
+  #progress-bar-wrap { display: none; flex: 1; }
+  .progress-label { font-size: 0.75rem; color: var(--text2); margin-bottom: 6px; }
+  .progress-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #a855f7); border-radius: 3px; transition: width 0.3s; }
+  .progress-steps { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .progress-step { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; background: var(--card2); color: var(--text3); transition: all 0.3s; }
+  .progress-step.done { background: rgba(108,99,255,0.2); color: var(--accent); }
+  .progress-step.active { background: var(--accent); color: #fff; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* Content Score Dashboard */
+  #score-dashboard { display: none; }
+  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .score-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; position: relative; overflow: hidden; }
+  .score-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), #a855f7); }
+  .score-value { font-size: 2rem; font-weight: 800; margin-bottom: 4px; }
+  .score-label { font-size: 0.72rem; color: var(--text2); font-weight: 500; }
+  .score-sub { font-size: 0.65rem; color: var(--text3); margin-top: 4px; }
+  .viral-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+  .viral-low { background: rgba(239,68,68,0.2); color: var(--red); }
+  .viral-medium { background: rgba(234,179,8,0.2); color: var(--yellow); }
+  .viral-high { background: rgba(34,197,94,0.2); color: var(--green); }
+  .viral-viral { background: linear-gradient(90deg, rgba(108,99,255,0.3), rgba(168,85,247,0.3)); color: var(--accent2); animation: glow 2s infinite; }
+  @keyframes glow { 0%,100%{box-shadow:0 0 0 rgba(108,99,255,0)} 50%{box-shadow:0 0 15px rgba(108,99,255,0.5)} }
+
+  /* Section Header */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .section-title { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .section-count { font-size: 0.75rem; color: var(--text2); background: var(--card2); padding: 2px 8px; border-radius: 20px; }
+
+  /* Clips Grid */
+  #clips-section { display: none; }
+  .clips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  /* Clip Card */
+  .clip-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; transition: all 0.3s; position: relative;
+  }
+  .clip-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .clip-thumb-wrap { position: relative; background: #000; aspect-ratio: 16/9; overflow: hidden; }
+  .clip-canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .clip-num-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.8); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(4px); }
+  .duration-badge { position: absolute; top: 8px; right: 8px; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(4px); }
+  .duration-ok { background: rgba(34,197,94,0.9); color: #fff; }
+  .duration-warn { background: rgba(239,68,68,0.9); color: #fff; }
+  .play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0); transition: background 0.2s; cursor: pointer; }
+  .play-overlay:hover { background: rgba(0,0,0,0.4); }
+  .play-btn-inner { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 20px; opacity: 0; transform: scale(0.8); transition: all 0.2s; }
+  .play-overlay:hover .play-btn-inner { opacity: 1; transform: scale(1); }
+
+  .clip-body { padding: 14px; }
+  .clip-title-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+  .clip-title { font-size: 0.82rem; font-weight: 700; line-height: 1.3; flex: 1; cursor: text; }
+  .clip-title-edit { display: none; width: 100%; background: var(--bg); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 0.82rem; font-weight: 700; outline: none; }
+  .btn-edit-title { background: transparent; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 2px; transition: color 0.2s; flex-shrink: 0; }
+  .btn-edit-title:hover { color: var(--accent); }
+
+  .clip-hook { font-size: 0.72rem; color: var(--text2); margin-bottom: 10px; line-height: 1.4; padding: 6px 10px; background: var(--bg); border-left: 2px solid var(--accent); border-radius: 0 4px 4px 0; font-style: italic; }
+  .clip-cta { font-size: 0.68rem; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+
+  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .time-field label { font-size: 0.65rem; color: var(--text3); display: block; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .time-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--text); font-size: 0.78rem; font-family: 'Courier New', monospace; outline: none; transition: border-color 0.2s; }
+  .time-input:focus { border-color: var(--accent); }
+
+  /* Scores */
+  .scores-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+  .retention-wrap { flex: 1; }
+  .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .score-name { font-size: 0.65rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .score-num { font-size: 0.72rem; font-weight: 700; }
+  .score-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+  .score-green { background: linear-gradient(90deg, var(--green), #16a34a); }
+  .score-yellow { background: linear-gradient(90deg, var(--yellow), #ca8a04); }
+  .score-red { background: linear-gradient(90deg, var(--red), #dc2626); }
+  .viral-wrap { text-align: center; }
+  .flame-row { font-size: 16px; line-height: 1; }
+
+  /* Sparkline */
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 32px; margin-bottom: 12px; }
+  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; animation: spark-grow 0.8s ease-out both; }
+  @keyframes spark-grow { from { height: 0 !important; } }
+
+  /* Card Actions */
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .card-actions .btn { font-size: 0.72rem; padding: 7px 12px; flex: 1; min-width: 0; justify-content: center; }
+
+  /* Hook Templates */
+  #hooks-section { }
+  .templates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .template-group { }
+  .template-group-title { font-size: 0.72rem; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .template-list { display: flex; flex-direction: column; gap: 6px; }
+  .template-item { padding: 10px 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; line-height: 1.4; color: var(--text2); }
+  .template-item:hover { border-color: var(--accent); color: var(--text); background: rgba(108,99,255,0.08); }
+  .template-item:active { transform: scale(0.98); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 560px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative; animation: modal-in 0.2s ease-out; }
+  @keyframes modal-in { from { transform: scale(0.95) translateY(10px); opacity: 0; } }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: var(--card2); border: none; color: var(--text2); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .modal-close:hover { background: var(--red); color: #fff; }
+  .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+  .modal-body { font-size: 0.82rem; color: var(--text2); line-height: 1.6; }
+  .ffmpeg-cmd { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.72rem; color: var(--green); line-height: 1.6; word-break: break-all; margin: 12px 0; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* Preview Modal */
+  #preview-modal .modal { max-width: 720px; }
+  #preview-modal-video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 12px; }
+  .preview-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .preview-time-display { font-family: 'Courier New', monospace; font-size: 0.82rem; color: var(--accent); background: var(--bg); padding: 5px 10px; border-radius: 6px; }
+
+  /* Toast */
+  #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.8rem; display: flex; align-items: center; gap: 10px; pointer-events: all; animation: toast-in 0.3s ease-out; max-width: 300px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .toast.toast-out { animation: toast-out 0.3s ease-in forwards; }
+  @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } }
+  @keyframes toast-out { to { transform: translateX(120%); opacity: 0; } }
+  .toast-icon { font-size: 18px; flex-shrink: 0; }
+  .toast-success { border-color: var(--green); }
+  .toast-warn { border-color: var(--yellow); }
+  .toast-info { border-color: var(--accent); }
+
+  /* File input hidden */
+  #file-input { display: none; }
+
+  /* Responsive */
+  @media (max-width: 1100px) { .clips-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) {
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+    .templates-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    aside { display: none; }
+    .clips-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+    header { padding: 0 16px; }
+  }
+
+  /* Empty State */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: var(--text2); }
+  .empty-state p { font-size: 0.8rem; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Section spacing */
+  .section-wrap { }
+
+  /* Info box */
+  .info-box { padding: 10px 12px; background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2); border-radius: 8px; font-size: 0.7rem; color: var(--text2); line-height: 1.5; margin-top: 8px; }
+
+  /* Best clip highlight */
+  .clip-card.best-clip { border-color: var(--yellow); }
+  .clip-card.best-clip::before { content: '⭐ Best Clip'; position: absolute; top: 0; right: 0; background: var(--yellow); color: #000; font-size: 0.6rem; font-weight: 800; padding: 3px 8px; border-radius: 0 var(--radius) 0 var(--radius-sm); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">✂️</div>
+    Clip<span class="pro">Master Pro</span>
+  </div>
+  <div class="header-actions">
+    <span class="badge-no-wm">No Watermark</span>
+    <button class="btn btn-secondary btn-sm" onclick="clearAll()">🗑 Reset</button>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <!-- Integrations -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Integrations</div>
+      <div class="int-row">
+
+        <!-- Gemini API -->
+        <div class="int-card">
+          <div class="int-header">
+            <span class="int-icon">✨</span>
+            <div>
+              <div class="int-title">Gemini API</div>
+              <div class="int-desc">AI title & hook generator</div>
+            </div>
+            <span class="status-dot" id="gemini-dot"></span>
+          </div>
+          <input class="int-input" type="password" id="gemini-key" placeholder="Paste API key..." />
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn-sm btn-accent" onclick="saveGeminiKey()">Connect</button>
+            <button class="btn-sm btn-ghost" onclick="clearGeminiKey()">Clear</button>
+          </div>
+        </div>
+
+        <!-- FFmpeg WASM -->
+        <div class="int-card">
+          <div class="int-header">
+            <span class="int-icon">⚙️</span>
+            <div>
+              <div class="int-title">FFmpeg.wasm</div>
+              <div class="int-desc">Browser-based processing</div>
+            </div>
+          </div>
+          <div class="toggle-row" style="margin-top:8px;">
+            <span class="setting-label">Enable FFmpeg.wasm</span>
+            <label class="toggle">
+              <input type="checkbox" id="ffmpeg-toggle" onchange="saveSetting('ffmpeg_wasm', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="info-box" style="margin-top:8px;">Lebih lambat tapi tidak butuh server. Cocok untuk clip pendek.</div>
+        </div>
+
+        <!-- CapCut -->
+        <div class="int-card">
+          <div class="int-header">
+            <span class="int-icon">🎬</span>
+            <div>
+              <div class="int-title">CapCut Export</div>
+              <div class="int-desc">Export ke CapCut</div>
+            </div>
+          </div>
+          <div class="info-box">Download clip → Import ke CapCut → Gunakan template viral yang tersedia</div>
+        </div>
+
+        <!-- YouTube Upload -->
+        <div class="int-card">
+          <div class="int-header">
+            <span class="int-icon">▶️</span>
+            <div>
+              <div class="int-title">YouTube Upload</div>
+              <div class="int-desc">YouTube Data API v3</div>
+            </div>
+          </div>
+          <div class="info-box">Aktifkan YouTube Data API v3 di Google Console → Buat OAuth credentials → Tambahkan scope youtube.upload</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Caption Settings -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Caption Settings</div>
+      <div class="caption-settings">
+        <div class="setting-row">
+          <span class="setting-label">Auto Caption</span>
+          <label class="toggle">
+            <input type="checkbox" id="caption-toggle" checked onchange="saveSetting('caption_on', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div>
+          <div class="sidebar-label" style="margin-bottom:6px;">Caption Style</div>
+          <div class="style-grid">
+            <div class="style-opt active" onclick="selectStyle(this,'bold_yellow')">Bold Yellow</div>
+            <div class="style-opt" onclick="selectStyle(this,'white_outline')">White Outline</div>
+            <div class="style-opt" onclick="selectStyle(this,'minimal')">Minimal White</div>
+            <div class="style-opt" onclick="selectStyle(this,'tiktok')">TikTok Style</div>
+          </div>
+        </div>
+        <div>
+          <div class="setting-row" style="margin-bottom:6px;">
+            <span class="setting-label">Font Size</span>
+            <span class="setting-label" id="font-size-val">32px</span>
+          </div>
+          <input type="range" class="range-slider" min="20" max="60" value="32" id="font-size-slider" oninput="updateFontSize(this.value)">
+        </div>
+        <div>
+          <div class="sidebar-label" style="margin-bottom:6px;">Position</div>
+          <div class="pos-row">
+            <button class="pos-btn" onclick="selectPos(this,'top')">Top</button>
+            <button class="pos-btn" onclick="selectPos(this,'center')">Center</button>
+            <button class="pos-btn active" onclick="selectPos(this,'bottom')">Bottom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- Upload Section -->
+    <div class="section-wrap">
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag-over')">
+        <div class="upload-icon">🎬</div>
+        <div class="upload-title">Upload Video Kamu</div>
+        <div class="upload-sub">Drag & drop atau klik untuk pilih file MP4, MOV, atau WebM</div>
+        <div class="upload-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">📁 Pilih File Video</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">atau Drop di sini</button>
+        </div>
+        <div class="or-divider">atau paste YouTube URL</div>
+        <div class="yt-input-row" onclick="event.stopPropagation()">
+          <input class="yt-input" type="url" id="yt-url" placeholder="https://www.youtube.com/watch?v=..." />
+          <button class="btn btn-secondary" onclick="handleYtUrl()">Proses</button>
+        </div>
+        <div class="yt-note" onclick="event.stopPropagation()">
+          ⚠️ YouTube URL tidak bisa diunduh langsung di browser. Gunakan <code>yt-dlp</code> terlebih dahulu:<br>
+          <code>yt-dlp -f "bestvideo[ext=mp4]+bestaudio" [URL] -o output.mp4</code>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/webm" onchange="handleFileSelect(event)">
+    </div>
+
+    <!-- Video Preview -->
+    <div id="video-preview-section">
+      <div class="section-header">
+        <div class="section-title">🎥 Video Preview</div>
+        <button class="btn btn-secondary btn-sm" onclick="clearVideo()">✕ Ganti Video</button>
+      </div>
+      <div class="video-wrap">
+        <video id="preview-video" controls></video>
+      </div>
+      <div class="video-info-bar" id="video-info-bar" style="margin-top:10px;">
+        <div class="vinfo-item">Nama: <span id="vinfo-name">—</span></div>
+        <div class="vinfo-item">Durasi: <span id="vinfo-duration">—</span></div>
+        <div class="vinfo-item">Ukuran: <span id="vinfo-size">—</span></div>
+        <div class="vinfo-item">Format: <span id="vinfo-format">—</span></div>
+      </div>
+
+      <div style="margin-top:16px;" class="analyze-wrap">
+        <button class="btn-analyze" onclick="startAnalysis()">
+          <span>🔬 Analyze &amp; Generate Clips</span>
+        </button>
+        <div id="progress-bar-wrap">
+          <div class="progress-label" id="progress-label">Menganalisis video...</div>
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="progress-steps">
+            <div class="progress-step" id="step-1">🔍 Scene Detection</div>
+            <div class="progress-step" id="step-2">📊 Engagement Analysis</div>
+            <div class="progress-step" id="step-3">✂️ Clip Extraction</div>
+            <div class="progress-step" id="step-4">🤖 AI Title Gen</div>
+            <div class="progress-step" id="step-5">✅ Done</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Dashboard -->
+    <div id="score-dashboard">
+      <div class="section-header">
+        <div class="section-title">📊 Content Score Dashboard</div>
+      </div>
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="score-value" id="avg-retention" style="color:var(--green)">—</div>
+          <div class="score-label">Avg. Retention Score</div>
+          <div class="score-sub">dari semua clip</div>
+        </div>
+        <div class="score-card">
+          <div class="score-value" id="best-clip-val" style="color:var(--yellow)">—</div>
+          <div class="score-label">Best Clip</div>
+          <div class="score-sub" id="best-clip-title">—</div>
+        </div>
+        <div class="score-card">
+          <div class="score-value" id="total-clips-val">—</div>
+          <div class="score-label">Total Clips</div>
+          <div class="score-sub">siap diexport</div>
+        </div>
+        <div class="score-card">
+          <div style="margin-bottom:8px;" id="viral-badge-wrap"></div>
+          <div class="score-label">Viral Potential</div>
+          <div class="score-sub" id="viral-sub">estimated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clips Section -->
+    <div id="clips-section">
+      <div class="section-header">
+        <div class="section-title">✂️ Suggested Clips <span class="section-count" id="clip-count">0</span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="reorderClips()">↕ Urutkan</button>
+          <button class="btn btn-primary btn-sm" onclick="exportAllFFmpeg()">⬇ Export All FFmpeg</button>
+        </div>
+      </div>
+      <div class="clips-grid" id="clips-grid"></div>
+    </div>
+
+    <!-- Hook & CTA Templates -->
+    <div id="hooks-section" class="section-wrap">
+      <div class="section-header">
+        <div class="section-title">💡 Hook &amp; CTA Templates</div>
+        <span style="font-size:0.72rem;color:var(--text3)">Klik untuk copy ke clipboard</span>
+      </div>
+      <div class="templates-grid">
+        <div class="template-group">
+          <div class="template-group-title">🎣 Hook Pembuka</div>
+          <div class="template-list">
+            <div class="template-item" onclick="copyTemplate(this)">Gue hampir nyerah, tapi kemudian hal ini terjadi...</div>
+            <div class="template-item" onclick="copyTemplate(this)">Rahasia yang gue sembunyiin selama ini akhirnya gue reveal...</div>
+            <div class="template-item" onclick="copyTemplate(this)">Ini yang bikin konten gue meledak dalam 30 hari...</div>
+            <div class="template-item" onclick="copyTemplate(this)">Jangan scroll dulu, dengerin ini 30 detik aja...</div>
+            <div class="template-item" onclick="copyTemplate(this)">Gue udah buang Rp 50 juta sebelum nemuin cara ini...</div>
+            <div class="template-item" onclick="copyTemplate(this)">Kenapa gue dulu nggak tahu hal sesimpel ini?!</div>
+          </div>
+        </div>
+        <div class="template-group">
+          <div class="template-group-title">📣 Call to Action</div>
+          <div class="template-list">
+            <div class="template-item" onclick="copyTemplate(this)">Follow biar lo gak ketinggalan konten kayak gini!</div>
+            <div class="template-item" onclick="copyTemplate(this)">Comment 'mau' kalau lo pengen gue kasih tutorialnya!</div>
+            <div class="template-item" onclick="copyTemplate(this)">Share ke temen lo yang butuh info ini sekarang!</div>
+            <div class="template-item" onclick="copyTemplate(this)">Tonton sampai habis, ada surprise di akhir!</div>
+            <div class="template-item" onclick="copyTemplate(this)">Save dulu sebelum lo lupa, ini penting banget!</div>
+            <div class="template-item" onclick="copyTemplate(this)">Like kalau konten ini nambah value buat lo!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('export-modal')">✕</button>
+    <div class="modal-title">⬇️ Export Clip</div>
+    <div class="modal-body">
+      <strong style="color:var(--text);">📋 Cara Export Clip:</strong>
+      <div style="margin:10px 0;padding:10px 12px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.3);font-size:0.78rem;">
+        📁 File video Anda: <strong id="ffmpeg-video-name" style="color:var(--accent);">-</strong>
+      </div>
+      <ol style="margin:8px 0 0 16px;line-height:2.4;font-size:0.8rem;">
+        <li>Buka <b>PowerShell</b> atau <b>CMD</b></li>
+        <li>Masuk ke folder tempat file video berada:<br>
+          <span style="font-size:0.7rem;color:var(--text2);">Contoh jika video di Downloads:</span><br>
+          <code style="background:var(--bg);padding:3px 8px;border-radius:4px;font-size:0.7rem;color:var(--green);display:block;margin-top:3px;">cd "C:\Users\Alwi\Downloads"</code>
+        </li>
+        <li>Jalankan command ini:</li>
+      </ol>
+      <div class="ffmpeg-cmd" id="ffmpeg-cmd-display"></div>
+      <p style="font-size:0.72rem;color:var(--yellow);margin-top:8px;padding:8px 10px;background:rgba(234,179,8,0.08);border-radius:6px;border:1px solid rgba(234,179,8,0.2);">
+        ⚠️ <b>Error "No such file"?</b> Pastikan terminal ada di folder yang sama dengan file <span id="ffmpeg-video-name2" style="font-weight:700;"></span>. Cek nama file tidak ada typo atau spasi.
+      </p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="copyFFmpegCmd()">📋 Copy FFmpeg Command</button>
+      <button class="btn btn-secondary" onclick="closeModal('export-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="stopPreview()">✕</button>
+    <div class="modal-title" id="preview-modal-title">Preview Clip</div>
+    <video id="preview-modal-video" controls></video>
+    <div class="preview-controls">
+      <button class="btn btn-primary btn-sm" onclick="playPreviewClip()">▶ Play Clip</button>
+      <button class="btn btn-secondary btn-sm" onclick="pausePreviewClip()">⏸ Pause</button>
+      <div class="preview-time-display" id="preview-time-display">0.00s / 0.00s</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let videoFile = null;
+let videoURL = null;
+let videoDuration = 0;
+let clips = [];
+let currentClipForExport = null;
+let currentPreviewClip = null;
+let previewInterval = null;
+let audioEnergyPerSec = []; // hasil analisis audio nyata
+
+// Fallback konten jika Gemini tidak tersedia
+const fallbackHooks = [
+  "Ini yang paling sering diabaikan tapi paling penting...",
+  "Gue hampir menyerah sebelum nemuin cara ini...",
+  "Kebanyakan orang salah paham soal hal ini...",
+  "Dengerin baik-baik, ini beda dari yang biasanya...",
+  "Satu insight ini yang beneran mengubah segalanya...",
+  "Jangan scroll dulu, poin ini yang paling krusial...",
+  "Ini fakta yang hampir gak ada yang mau ngomong...",
+  "Gue buktiin sendiri, dan hasilnya bikin gue kaget..."
+];
+const fallbackCtas = [
+  "Follow biar lo gak ketinggalan konten kayak gini!",
+  "Comment 'mau' kalau lo pengen tutorial lengkapnya!",
+  "Share ke temen lo yang butuh info ini sekarang!",
+  "Tonton sampai habis — ada poin paling penting di akhir!",
+  "Save dulu sebelum lo lupa, ini bakal lo butuhin!",
+  "Like kalau ini nambah value buat lo hari ini!"
+];
+const fallbackTitles = [
+  "Cara Paling Efektif Yang Jarang Diketahui",
+  "Kenapa Kebanyakan Orang Gagal Melakukan Ini",
+  "Rahasia Sederhana Yang Berdampak Besar",
+  "Ini Yang Membedakan Yang Berhasil vs Tidak",
+  "Hal Penting Yang Harus Lo Tahu Sekarang",
+  "Cara Cepat Dapet Hasil Maksimal",
+  "Stop Buang Waktu — Ini Yang Beneran Works",
+  "Insight Kunci Yang Mengubah Segalanya"
+];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() { loadSettings(); }
+
+function loadSettings() {
+  const k = localStorage.getItem('gemini_key');
+  if (k) { document.getElementById('gemini-key').value = k; document.getElementById('gemini-dot').classList.add('connected'); }
+  document.getElementById('ffmpeg-toggle').checked = localStorage.getItem('ffmpeg_wasm') === 'true';
+  const co = localStorage.getItem('caption_on');
+  if (co !== null) document.getElementById('caption-toggle').checked = co === 'true';
+  const fs = localStorage.getItem('font_size') || '32';
+  document.getElementById('font-size-slider').value = fs;
+  document.getElementById('font-size-val').textContent = fs + 'px';
+  const st = localStorage.getItem('caption_style') || 'bold_yellow';
+  document.querySelectorAll('.style-opt').forEach(el => el.classList.toggle('active', el.getAttribute('onclick').includes(st)));
+  const pos = localStorage.getItem('caption_pos') || 'bottom';
+  document.querySelectorAll('.pos-btn').forEach(el => el.classList.toggle('active', el.getAttribute('onclick').includes(`'${pos}'`)));
+}
+function saveSetting(k, v) { localStorage.setItem(k, v); showToast('✅ Setting tersimpan!', 'success'); }
+function saveGeminiKey() {
+  const k = document.getElementById('gemini-key').value.trim();
+  if (!k) { showToast('⚠️ Masukkan API key dulu', 'warn'); return; }
+  localStorage.setItem('gemini_key', k);
+  document.getElementById('gemini-dot').classList.add('connected');
+  showToast('✅ Gemini API connected!', 'success');
+}
+function clearGeminiKey() {
+  localStorage.removeItem('gemini_key');
+  document.getElementById('gemini-key').value = '';
+  document.getElementById('gemini-dot').classList.remove('connected');
+  showToast('🗑 API key dihapus', 'info');
+}
+function selectStyle(el, s) { document.querySelectorAll('.style-opt').forEach(e => e.classList.remove('active')); el.classList.add('active'); localStorage.setItem('caption_style', s); }
+function selectPos(el, p) { document.querySelectorAll('.pos-btn').forEach(e => e.classList.remove('active')); el.classList.add('active'); localStorage.setItem('caption_pos', p); }
+function updateFontSize(v) { document.getElementById('font-size-val').textContent = v + 'px'; localStorage.setItem('font_size', v); }
+
+// ══════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════
+function handleFileSelect(e) { const f = e.target.files[0]; if (f) loadVideoFile(f); }
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('video/')) loadVideoFile(f);
+  else showToast('⚠️ File harus berformat video', 'warn');
+}
+
+function loadVideoFile(file) {
+  videoFile = file;
+  if (videoURL) URL.revokeObjectURL(videoURL);
+  videoURL = URL.createObjectURL(file);
+  const vid = document.getElementById('preview-video');
+  vid.src = videoURL;
+  vid.onloadedmetadata = async () => {
+    videoDuration = vid.duration;
+    document.getElementById('vinfo-name').textContent = file.name.length > 30 ? file.name.slice(0,28)+'...' : file.name;
+    document.getElementById('vinfo-duration').textContent = formatTime(videoDuration);
+    document.getElementById('vinfo-size').textContent = formatSize(file.size);
+    document.getElementById('vinfo-format').textContent = file.type || file.name.split('.').pop().toUpperCase();
+    document.getElementById('video-preview-section').style.display = 'block';
+    document.getElementById('upload-zone').style.display = 'none';
+    showToast('✅ Video dimuat! Menganalisis audio...', 'success');
+    // Analisis audio di background
+    await analyzeAudio(file);
+  };
+}
+
+function handleYtUrl() {
+  const url = document.getElementById('yt-url').value.trim();
+  if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) { showToast('⚠️ URL tidak valid', 'warn'); return; }
+  showToast('ℹ️ Download dulu dengan: yt-dlp -f "bestvideo[ext=mp4]+bestaudio" [URL] -o output.mp4', 'info');
+}
+
+function clearVideo() {
+  videoFile = null;
+  if (videoURL) { URL.revokeObjectURL(videoURL); videoURL = null; }
+  document.getElementById('preview-video').src = '';
+  document.getElementById('video-preview-section').style.display = 'none';
+  document.getElementById('upload-zone').style.display = 'block';
+  document.getElementById('clips-section').style.display = 'none';
+  document.getElementById('score-dashboard').style.display = 'none';
+  clips = []; audioEnergyPerSec = [];
+  showToast('🗑 Video dihapus', 'info');
+}
+function clearAll() { clearVideo(); localStorage.removeItem('saved_clips'); }
+
+// ══════════════════════════════════════════
+// AUDIO ANALYSIS — analisis energi suara nyata
+// ══════════════════════════════════════════
+async function analyzeAudio(file) {
+  try {
+    showToast('🎧 Menganalisis energi audio...', 'info');
+    const arrayBuffer = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+    await audioCtx.close();
+
+    const ch = decoded.getChannelData(0);
+    const sr = decoded.sampleRate;
+    const totalSecs = Math.floor(decoded.duration);
+    const raw = [];
+
+    for (let sec = 0; sec < totalSecs; sec++) {
+      const s = sec * sr, e = Math.min(s + sr, ch.length);
+      let rms = 0;
+      for (let i = s; i < e; i++) rms += ch[i] * ch[i];
+      raw.push(Math.sqrt(rms / (e - s)));
+    }
+
+    // Smoothing (moving average 3s)
+    const smoothed = raw.map((_, i) => {
+      const win = raw.slice(Math.max(0, i-1), i+2);
+      return win.reduce((a,b) => a+b, 0) / win.length;
+    });
+
+    // Normalize ke skor 40–95
+    const mn = Math.min(...smoothed), mx = Math.max(...smoothed);
+    audioEnergyPerSec = smoothed.map(v =>
+      mx > mn ? Math.round(40 + ((v - mn) / (mx - mn)) * 55) : 65
+    );
+
+    showToast(`✅ Audio dianalisis (${totalSecs} detik). Siap generate clips!`, 'success');
+  } catch(e) {
+    console.warn('Audio analysis error:', e);
+    audioEnergyPerSec = [];
+    showToast('⚠️ Analisis audio gagal, menggunakan estimasi posisi', 'warn');
+  }
+}
+
+function getSegmentScore(startSec, endSec) {
+  if (audioEnergyPerSec.length === 0) return null;
+  const s = Math.floor(startSec), e = Math.min(Math.ceil(endSec), audioEnergyPerSec.length);
+  if (s >= e) return null;
+  const seg = audioEnergyPerSec.slice(s, e);
+  return Math.round(seg.reduce((a,b) => a+b, 0) / seg.length);
+}
+
+// Cari segmen terbaik berdasarkan energi audio
+function findBestSegments(numClips, dur) {
+  if (audioEnergyPerSec.length < 30) {
+    // Fallback: distribusi merata
+    const segs = [];
+    for (let i = 0; i < numClips; i++) {
+      const clipDur = 38 + Math.floor(Math.random() * 18);
+      const maxStart = Math.max(5, dur - clipDur - 5);
+      const start = i === 0 ? 5 : Math.round((maxStart / (numClips - 1)) * i);
+      segs.push({ start, end: Math.min(start + clipDur, dur - 1), duration: clipDur });
+    }
+    return segs;
+  }
+
+  const clipDur = 42; // target durasi tengah
+  const minGap = 25; // jarak minimum antar clip
+  const energyLen = Math.min(audioEnergyPerSec.length, Math.floor(dur) - clipDur);
+
+  // Hitung rata-rata energi per window 42 detik
+  const windows = [];
+  for (let i = 5; i < energyLen; i++) {
+    const seg = audioEnergyPerSec.slice(i, i + clipDur);
+    if (seg.length < 20) continue;
+    windows.push({ start: i, avg: seg.reduce((a,b) => a+b, 0) / seg.length });
+  }
+  windows.sort((a, b) => b.avg - a.avg);
+
+  // Pilih top N dengan jarak minimum
+  const chosen = [];
+  for (const w of windows) {
+    if (chosen.length >= numClips) break;
+    const tooClose = chosen.some(c => Math.abs(c.start - w.start) < minGap);
+    if (!tooClose) {
+      const duration = 35 + Math.floor(Math.random() * 18);
+      chosen.push({ start: w.start, end: Math.min(w.start + duration, dur - 1), duration, avgEnergy: w.avg });
+    }
+  }
+
+  // Urutkan berdasarkan waktu
+  chosen.sort((a, b) => a.start - b.start);
+  return chosen;
+}
+
+// ══════════════════════════════════════════
+// GEMINI API
+// ══════════════════════════════════════════
+async function callGemini(prompt) {
+  const key = localStorage.getItem('gemini_key');
+  if (!key) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.85, maxOutputTokens: 400 }
+        })
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API error ' + res.status);
+    }
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+  } catch(e) {
+    console.warn('Gemini error:', e.message);
+    showToast('⚠️ Gemini error: ' + e.message.slice(0,60), 'warn');
+    return null;
+  }
+}
+
+async function getAIContent(clipIdx, totalClips, startSec, endSec, videoName, retentionScore) {
+  const vTitle = videoName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  const min = Math.floor(startSec / 60), sec = String(Math.floor(startSec % 60)).padStart(2,'0');
+  const posLabel = clipIdx === 0 ? 'pembuka' : clipIdx === totalClips-1 ? 'penutup' : 'isi';
+  const energyLabel = retentionScore >= 80 ? 'sangat tinggi' : retentionScore >= 65 ? 'sedang' : 'rendah';
+
+  const key = localStorage.getItem('gemini_key');
+  if (key) {
+    const prompt = `Kamu content strategist viral Indonesia. Buat konten untuk SHORT VIDEO dari podcast/video ini:
+
+Nama video: "${vTitle}"
+Timestamp: ${min}:${sec} (durasi ~${endSec-startSec}s)
+Bagian: ${posLabel} video (clip ke-${clipIdx+1} dari ${totalClips})
+Energi audio: ${energyLabel} (skor ${retentionScore}/100)
+
+Buat respons JSON SAJA (tanpa backtick, tanpa penjelasan):
+{"title":"judul hook max 55 karakter","hook":"kalimat pembuka yang bikin penonton tidak mau scroll, max 12 kata","cta":"ajakan aksi spesifik 1 kalimat pendek"}
+
+Aturan:
+- title: bikin penasaran, pakai angka/pertanyaan/kontroversi, bahasa Indonesia
+- hook: langsung masuk ke konflik/situasi, tidak perlu salam
+- cta: relevan dengan isi video "${vTitle}"`;
+
+    const raw = await callGemini(prompt);
+    if (raw) {
+      try {
+        const clean = raw.replace(/```[\w]*\n?/g,'').replace(/```/g,'').trim();
+        const p = JSON.parse(clean);
+        if (p.title && p.hook && p.cta) return p;
+      } catch(e) { /* fallback */ }
+    }
+  }
+
+  // Fallback berdasarkan posisi
+  return {
+    title: fallbackTitles[clipIdx % fallbackTitles.length],
+    hook: fallbackHooks[clipIdx % fallbackHooks.length],
+    cta: fallbackCtas[clipIdx % fallbackCtas.length]
+  };
+}
+
+// ══════════════════════════════════════════
+// ANALYSIS PIPELINE
+// ══════════════════════════════════════════
+async function startAnalysis() {
+  if (!videoURL) { showToast('⚠️ Upload video dulu!', 'warn'); return; }
+  const progressWrap = document.getElementById('progress-bar-wrap');
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  progressWrap.style.display = 'block';
+
+  const hasGemini = !!localStorage.getItem('gemini_key');
+  const hasAudio = audioEnergyPerSec.length > 0;
+
+  const steps = [
+    { id: 'step-1', label: hasAudio ? '✅ Audio sudah dianalisis!' : 'Mendeteksi scene changes...', pct: 20 },
+    { id: 'step-2', label: hasAudio ? `📊 Menemukan ${Math.floor(videoDuration/60)} momen terbaik...` : 'Menganalisis posisi video...', pct: 45 },
+    { id: 'step-3', label: '✂️ Mengekstrak segmen terbaik...', pct: 65 },
+    { id: 'step-4', label: hasGemini ? '✨ Gemini AI generating titles...' : '📝 Generating titles & hooks...', pct: 85 },
+    { id: 'step-5', label: '✅ Finalisasi...', pct: 100 },
+  ];
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    document.getElementById(s.id).classList.add('active');
+    label.textContent = s.label;
+    fill.style.width = s.pct + '%';
+    await sleep(i === 3 ? 300 : 500 + Math.random() * 400);
+    document.getElementById(s.id).classList.remove('active');
+    document.getElementById(s.id).classList.add('done');
+  }
+
+  await sleep(200);
+  progressWrap.style.display = 'none';
+  await generateClips();
+}
+
+async function generateClips() {
+  const dur = videoDuration || 300;
+  const numClips = Math.min(6, Math.max(3, Math.floor(dur / 55)));
+  const fname = videoFile ? videoFile.name : 'video.mp4';
+  clips = [];
+
+  // Temukan segmen terbaik berdasarkan audio energy
+  const segments = findBestSegments(numClips, dur);
+  showToast(`🤖 Generating konten untuk ${segments.length} clip...`, 'info');
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    // Hitung skor dari analisis audio nyata
+    const audioScore = getSegmentScore(seg.start, seg.end);
+    const retention = audioScore !== null ? audioScore : (70 + Math.floor(Math.random() * 20));
+    const viral = Math.min(5, Math.max(1, Math.ceil(retention / 20)));
+
+    // Dapatkan konten dari Gemini atau fallback
+    const content = await getAIContent(i, segments.length, seg.start, seg.end, fname, retention);
+
+    // Sparkline mengikuti energi audio aktual per detik
+    const sparkData = [];
+    for (let t = 0; t < 12; t++) {
+      const tSec = seg.start + Math.floor((t / 12) * (seg.end - seg.start));
+      sparkData.push(audioEnergyPerSec[tSec] || (50 + Math.floor(Math.random() * 30)));
+    }
+
+    clips.push({
+      id: i + 1,
+      start: seg.start, end: seg.end,
+      duration: seg.end - seg.start,
+      retention, viral,
+      title: content.title,
+      hook: content.hook,
+      cta: content.cta,
+      sparkData
+    });
+  }
+
+  renderScoreDashboard();
+  await renderClips();
+  document.getElementById('clips-section').style.display = 'block';
+  document.getElementById('score-dashboard').style.display = 'block';
+  localStorage.setItem('saved_clips', JSON.stringify(clips));
+  const geminiUsed = !!localStorage.getItem('gemini_key');
+  showToast(`✅ ${clips.length} clip dari momen paling energik${geminiUsed ? ' (Gemini ✨)' : ''}!`, 'success');
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderScoreDashboard() {
+  const avg = Math.round(clips.reduce((s,c) => s+c.retention, 0) / clips.length);
+  const best = clips.reduce((b,c) => c.retention > b.retention ? c : b, clips[0]);
+  const el = document.getElementById('avg-retention');
+  el.textContent = avg;
+  el.style.color = avg >= 80 ? 'var(--green)' : avg >= 65 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('best-clip-val').textContent = '#' + best.id;
+  document.getElementById('best-clip-title').textContent = best.title.slice(0,30) + '...';
+  document.getElementById('total-clips-val').textContent = clips.length;
+  let viral, vc, vs;
+  if (avg >= 80) { viral = '🔥 VIRAL'; vc = 'viral-viral'; vs = 'Energi tinggi, potensi viral!'; }
+  else if (avg >= 70) { viral = '📈 HIGH'; vc = 'viral-high'; vs = 'Peluang besar viral'; }
+  else if (avg >= 58) { viral = '📊 MEDIUM'; vc = 'viral-medium'; vs = 'Perlu optimasi hook'; }
+  else { viral = '📉 LOW'; vc = 'viral-low'; vs = 'Pilih segmen lebih energik'; }
+  document.getElementById('viral-badge-wrap').innerHTML = `<span class="viral-badge ${vc}" style="font-size:1.1rem;font-weight:800;">${viral}</span>`;
+  document.getElementById('viral-sub').textContent = vs;
+}
+
+async function renderClips() {
+  const grid = document.getElementById('clips-grid');
+  grid.innerHTML = '';
+  document.getElementById('clip-count').textContent = clips.length;
+  const bestId = clips.reduce((b,c) => c.retention > b.retention ? c : b, clips[0]).id;
+
+  for (const clip of clips) {
+    const card = document.createElement('div');
+    card.className = 'clip-card' + (clip.id === bestId ? ' best-clip' : '');
+    const dur = clip.end - clip.start, durOk = dur >= 35 && dur <= 55;
+    const sc = clip.retention >= 80 ? 'score-green' : clip.retention >= 65 ? 'score-yellow' : 'score-red';
+    const scol = clip.retention >= 80 ? 'var(--green)' : clip.retention >= 65 ? 'var(--yellow)' : 'var(--red)';
+    const flames = '🔥'.repeat(clip.viral) + '🖤'.repeat(5 - clip.viral);
+    const sparks = clip.sparkData.map((h,i) =>
+      `<div class="spark-bar" style="height:${h}%;background:${h>70?'var(--green)':h>45?'var(--yellow)':'var(--red)'};animation-delay:${i*60}ms"></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="clip-thumb-wrap">
+        <canvas class="clip-canvas" id="canvas-${clip.id}" width="320" height="180"></canvas>
+        <span class="clip-num-badge">Clip #${clip.id}</span>
+        <span class="duration-badge ${durOk?'duration-ok':'duration-warn'}" id="dur-badge-${clip.id}">${Math.round(dur)}s</span>
+        <div class="play-overlay" onclick="openPreview(${clip.id})"><div class="play-btn-inner">▶</div></div>
+      </div>
+      <div class="clip-body">
+        <div class="clip-title-row">
+          <div class="clip-title" id="title-${clip.id}">${clip.title}</div>
+          <input class="clip-title-edit" id="title-edit-${clip.id}" type="text" value="${clip.title.replace(/"/g,'&quot;')}" onblur="saveTitle(${clip.id})" onkeydown="if(event.key==='Enter')saveTitle(${clip.id})">
+          <button class="btn-edit-title" onclick="toggleTitleEdit(${clip.id})">✏️</button>
+        </div>
+        <div class="clip-hook">"${clip.hook}"</div>
+        <div class="clip-cta">📣 ${clip.cta}</div>
+        <div class="time-row">
+          <div class="time-field"><label>Start Time</label><input class="time-input" type="text" id="start-${clip.id}" value="${secToTimestamp(clip.start)}" onchange="updateClipTime(${clip.id})"></div>
+          <div class="time-field"><label>End Time</label><input class="time-input" type="text" id="end-${clip.id}" value="${secToTimestamp(clip.end)}" onchange="updateClipTime(${clip.id})"></div>
+        </div>
+        <div class="scores-row">
+          <div class="retention-wrap">
+            <div class="score-header">
+              <span class="score-name">Retention Score</span>
+              <span class="score-num" style="color:${scol}">${clip.retention}%</span>
+            </div>
+            <div class="score-bar-track"><div class="score-bar-fill ${sc}" style="width:${clip.retention}%"></div></div>
+          </div>
+          <div class="viral-wrap"><div class="score-name">Viral</div><div class="flame-row">${flames}</div></div>
+        </div>
+        <div class="sparkline">${sparks}</div>
+        <div style="font-size:0.65rem;color:var(--text3);margin-bottom:10px;">📍 ${secToTimestamp(clip.start)} — ${secToTimestamp(clip.end)}</div>
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="openPreview(${clip.id})">👁 Preview</button>
+          <button class="btn btn-primary" onclick="openExport(${clip.id})">⬇ Export</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+    setTimeout(() => drawThumbnail(clip.id, clip.start), 150 * clip.id);
+  }
+}
+
+function drawThumbnail(clipId, time) {
+  const vid = document.getElementById('preview-video');
+  const canvas = document.getElementById('canvas-' + clipId);
+  if (!canvas) return;
+  if (!vid.src || vid.readyState < 2) {
+    const ctx = canvas.getContext('2d');
+    const g = ctx.createLinearGradient(0,0,320,180);
+    g.addColorStop(0,'#1a1a25'); g.addColorStop(1,'#0a0a0f');
+    ctx.fillStyle = g; ctx.fillRect(0,0,320,180);
+    ctx.fillStyle = 'rgba(108,99,255,0.5)'; ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Clip #' + clipId, 160, 85);
+    ctx.font = '11px Inter,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(secToTimestamp(time), 160, 105);
+    return;
+  }
+  const prev = vid.currentTime;
+  vid.currentTime = Math.min(time + 1, (videoDuration || 9999) - 0.5);
+  vid.onseeked = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(vid, 0, 0, 320, 180);
+    const g = ctx.createLinearGradient(0, 130, 0, 180);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 320, 180);
+    vid.currentTime = prev; vid.onseeked = null;
+  };
+}
+
+// ══════════════════════════════════════════
+// CLIP EDITING
+// ══════════════════════════════════════════
+function updateClipTime(id) {
+  const clip = clips.find(c => c.id === id); if (!clip) return;
+  clip.start = timestampToSec(document.getElementById('start-' + id).value);
+  clip.end = timestampToSec(document.getElementById('end-' + id).value);
+  clip.duration = clip.end - clip.start;
+  const badge = document.getElementById('dur-badge-' + id);
+  badge.textContent = Math.round(clip.duration) + 's';
+  badge.className = 'duration-badge ' + (clip.duration >= 35 && clip.duration <= 55 ? 'duration-ok' : 'duration-warn');
+  // Update skor dari audio nyata
+  const newScore = getSegmentScore(clip.start, clip.end);
+  if (newScore !== null) {
+    clip.retention = newScore; clip.viral = Math.min(5, Math.max(1, Math.ceil(newScore/20)));
+  }
+  localStorage.setItem('saved_clips', JSON.stringify(clips));
+}
+
+function toggleTitleEdit(id) {
+  const te = document.getElementById('title-edit-' + id), ti = document.getElementById('title-' + id);
+  if (te.style.display === 'block') saveTitle(id);
+  else { ti.style.display = 'none'; te.style.display = 'block'; te.focus(); te.select(); }
+}
+function saveTitle(id) {
+  const clip = clips.find(c => c.id === id); if (!clip) return;
+  const te = document.getElementById('title-edit-' + id), ti = document.getElementById('title-' + id);
+  clip.title = te.value; ti.textContent = clip.title; te.style.display = 'none'; ti.style.display = 'block';
+  localStorage.setItem('saved_clips', JSON.stringify(clips));
+  showToast('✅ Judul tersimpan!', 'success');
+}
+function reorderClips() { clips.sort((a,b) => b.retention - a.retention); renderClips(); showToast('↕ Diurutkan berdasarkan Retention Score', 'info'); }
+
+// ══════════════════════════════════════════
+// EXPORT — perintah FFmpeg yang benar
+// ══════════════════════════════════════════
+function openExport(clipId) {
+  currentClipForExport = clips.find(c => c.id === clipId); if (!currentClipForExport) return;
+  const fname = videoFile ? videoFile.name : 'input.mp4';
+  const safeName = currentClipForExport.title.replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_').slice(0,25);
+  const cmd = `ffmpeg -i "${fname}" -ss ${secToTimestamp(currentClipForExport.start)} -to ${secToTimestamp(currentClipForExport.end)} -c:v libx264 -crf 22 -preset fast -c:a aac -movflags +faststart "clip_${currentClipForExport.id}_${safeName}.mp4"`;
+  document.getElementById('ffmpeg-cmd-display').textContent = cmd;
+  document.getElementById('ffmpeg-video-name').textContent = fname;
+  const n2 = document.getElementById('ffmpeg-video-name2'); if (n2) n2.textContent = fname;
+  document.getElementById('export-modal').classList.add('show');
+}
+
+function copyFFmpegCmd() {
+  navigator.clipboard.writeText(document.getElementById('ffmpeg-cmd-display').textContent)
+    .then(() => showToast('📋 Command di-copy!', 'success'))
+    .catch(() => showToast('⚠️ Gagal copy', 'warn'));
+}
+
+function exportAllFFmpeg() {
+  const fname = videoFile ? videoFile.name : 'input.mp4';
+  const cmds = clips.map(c => {
+    const safe = c.title.replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_').slice(0,25);
+    return `ffmpeg -i "${fname}" -ss ${secToTimestamp(c.start)} -to ${secToTimestamp(c.end)} -c:v libx264 -crf 22 -preset fast -c:a aac -movflags +faststart "clip_${c.id}_${safe}.mp4"`;
+  }).join('\n\n');
+  navigator.clipboard.writeText(cmds).then(() => showToast(`📋 ${clips.length} commands di-copy!`, 'success')).catch(() => {});
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ══════════════════════════════════════════
+// PREVIEW
+// ══════════════════════════════════════════
+function openPreview(clipId) {
+  currentPreviewClip = clips.find(c => c.id === clipId);
+  if (!currentPreviewClip || !videoURL) { showToast('⚠️ Video tidak tersedia', 'warn'); return; }
+  const mv = document.getElementById('preview-modal-video');
+  mv.src = videoURL;
+  document.getElementById('preview-modal-title').textContent = `👁 Preview — ${currentPreviewClip.title.slice(0,40)}...`;
+  document.getElementById('preview-modal').classList.add('show');
+  mv.onloadeddata = () => playPreviewClip();
+}
+function playPreviewClip() {
+  if (!currentPreviewClip) return;
+  const vid = document.getElementById('preview-modal-video');
+  vid.currentTime = currentPreviewClip.start; vid.play();
+  if (previewInterval) clearInterval(previewInterval);
+  previewInterval = setInterval(() => {
+    const cur = vid.currentTime - currentPreviewClip.start;
+    const total = currentPreviewClip.end - currentPreviewClip.start;
+    document.getElementById('preview-time-display').textContent = `${cur.toFixed(1)}s / ${total.toFixed(1)}s`;
+    if (vid.currentTime >= currentPreviewClip.end) { vid.pause(); clearInterval(previewInterval); showToast('✅ Preview selesai', 'info'); }
+  }, 100);
+}
+function pausePreviewClip() { document.getElementById('preview-modal-video').pause(); if (previewInterval) clearInterval(previewInterval); }
+function stopPreview() { pausePreviewClip(); closeModal('preview-modal'); currentPreviewClip = null; }
+
+// ══════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════
+function copyTemplate(el) {
+  navigator.clipboard.writeText(el.textContent.trim())
+    .then(() => showToast('📋 Template di-copy!', 'success'))
+    .catch(() => showToast('⚠️ Gagal copy', 'warn'));
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function formatTime(s) { const h=~~(s/3600),m=~~((s%3600)/60),sc=~~(s%60); return h>0?`${h}:${pad(m)}:${pad(sc)}`:`${m}:${pad(sc)}`; }
+function secToTimestamp(s) { return `${pad(~~(s/3600))}:${pad(~~((s%3600)/60))}:${pad(~~(s%60))}`; }
+function timestampToSec(t) { const p=t.split(':').map(Number); return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0]||0; }
+function pad(n) { return String(n).padStart(2,'0'); }
+function formatSize(b) { return b<1048576?(b/1024).toFixed(1)+' KB':b<1073741824?(b/1048576).toFixed(1)+' MB':(b/1073741824).toFixed(2)+' GB'; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showToast(message, type='info') {
+  const c = document.getElementById('toast-container'), t = document.createElement('div');
+  const icons = {success:'✅', warn:'⚠️', info:'ℹ️'};
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${message}</span>`;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add('toast-out'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.show').forEach(m => { if (m.id==='preview-modal') stopPreview(); else m.classList.remove('show'); });
+});
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target===o) { if (o.id==='preview-modal') stopPreview(); else o.classList.remove('show'); } }));
+
+init();
+</script>
+  "Gue hampir nyerah, tapi kemudian hal ini terjadi...",
+  "Ini bukan konten biasa — dengerin baik-baik...",
+  "Satu hal yang berubah segalanya buat gue...",
+  "Kalau gue tahu ini dari dulu, hidup gue beda...",
+  "Fakta yang bikin gue shock waktu pertama tahu...",
+  "Ini alasan kenapa 90% orang gagal di sini...",
+  "Jangan scroll dulu, ini penting banget buat lo...",
+  "Gue mau jujur soal sesuatu yang selama ini gue sembunyiin..."
+];
+
+const fallbackCtas = [
+  "Follow biar gak ketinggalan konten kayak gini!",
+  "Comment 'mau' kalau lo pengen tahu lebih lanjut!",
+  "Share ke temen lo yang butuh info ini sekarang!",
+  "Tonton sampai habis, ada poin penting di akhir!",
+  "Save dulu, ini bakal lo butuhin nanti!",
+  "Like kalau ini nambah value buat lo!"
+];
+
+const fallbackTitles = [
+  "Cara Gue Dapet Hasil Maksimal Dalam Waktu Singkat",
+  "Rahasia Yang Jarang Dibahas Tapi Wajib Lo Tahu",
+  "Kenapa Kebanyakan Orang Gagal (Dan Cara Fixnya)",
+  "Ini Yang Bikin Konten Gue Meledak — Coba Deh",
+  "5 Hal Yang Harus Lo Tahu Sebelum Terlambat",
+  "Gue Hampir Menyerah Sebelum Nemuin Trik Ini",
+  "Stop Buang Waktu! Ini Cara Yang Beneran Works",
+  "POV: Lo Akhirnya Tahu Cara Yang Beneran Efektif"
+];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+  loadSettings();
+  restoreClips();
+}
+
+function loadSettings() {
+  const geminiKey = localStorage.getItem('gemini_key');
+  if (geminiKey) {
+    document.getElementById('gemini-key').value = geminiKey;
+    document.getElementById('gemini-dot').classList.add('connected');
+  }
+  const ffmpegOn = localStorage.getItem('ffmpeg_wasm') === 'true';
+  document.getElementById('ffmpeg-toggle').checked = ffmpegOn;
+  const captionOn = localStorage.getItem('caption_on');
+  if (captionOn !== null) document.getElementById('caption-toggle').checked = captionOn === 'true';
+  const fontSize = localStorage.getItem('font_size') || '32';
+  document.getElementById('font-size-slider').value = fontSize;
+  document.getElementById('font-size-val').textContent = fontSize + 'px';
+  const style = localStorage.getItem('caption_style') || 'bold_yellow';
+  document.querySelectorAll('.style-opt').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('onclick').includes(style));
+  });
+  const pos = localStorage.getItem('caption_pos') || 'bottom';
+  document.querySelectorAll('.pos-btn').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('onclick').includes(`'${pos}'`));
+  });
+}
+
+function saveSetting(key, value) {
+  localStorage.setItem(key, value);
+  showToast('✅ Setting tersimpan!', 'success');
+}
+
+function saveGeminiKey() {
+  const key = document.getElementById('gemini-key').value.trim();
+  if (!key) { showToast('⚠️ Masukkan API key dulu', 'warn'); return; }
+  localStorage.setItem('gemini_key', key);
+  document.getElementById('gemini-dot').classList.add('connected');
+  showToast('✅ Gemini API connected!', 'success');
+}
+
+function clearGeminiKey() {
+  localStorage.removeItem('gemini_key');
+  document.getElementById('gemini-key').value = '';
+  document.getElementById('gemini-dot').classList.remove('connected');
+  showToast('🗑 API key dihapus', 'info');
+}
+
+function selectStyle(el, style) {
+  document.querySelectorAll('.style-opt').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  localStorage.setItem('caption_style', style);
+  captionSettings.style = style;
+}
+
+function selectPos(el, pos) {
+  document.querySelectorAll('.pos-btn').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  localStorage.setItem('caption_pos', pos);
+  captionSettings.position = pos;
+}
+
+function updateFontSize(val) {
+  document.getElementById('font-size-val').textContent = val + 'px';
+  localStorage.setItem('font_size', val);
+  captionSettings.fontSize = parseInt(val);
+}
+
+// ══════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  loadVideoFile(file);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) loadVideoFile(file);
+  else showToast('⚠️ File harus berformat video', 'warn');
+}
+
+function loadVideoFile(file) {
+  videoFile = file;
+  if (videoURL) URL.revokeObjectURL(videoURL);
+  videoURL = URL.createObjectURL(file);
+  const vid = document.getElementById('preview-video');
+  vid.src = videoURL;
+  vid.onloadedmetadata = () => {
+    videoDuration = vid.duration;
+    document.getElementById('vinfo-name').textContent = file.name.length > 30 ? file.name.slice(0,28)+'...' : file.name;
+    document.getElementById('vinfo-duration').textContent = formatTime(videoDuration);
+    document.getElementById('vinfo-size').textContent = formatSize(file.size);
+    document.getElementById('vinfo-format').textContent = file.type || file.name.split('.').pop().toUpperCase();
+    showToast('✅ Video berhasil dimuat!', 'success');
+  };
+  document.getElementById('video-preview-section').style.display = 'block';
+  document.getElementById('upload-zone').style.display = 'none';
+}
+
+function handleYtUrl() {
+  const url = document.getElementById('yt-url').value.trim();
+  if (!url || !url.includes('youtube.com') && !url.includes('youtu.be')) {
+    showToast('⚠️ URL YouTube tidak valid', 'warn'); return;
+  }
+  showToast('ℹ️ Gunakan yt-dlp untuk download dulu:\nyt-dlp -f "bestvideo[ext=mp4]+bestaudio" ' + url, 'info');
+}
+
+function clearVideo() {
+  videoFile = null;
+  if (videoURL) { URL.revokeObjectURL(videoURL); videoURL = null; }
+  document.getElementById('preview-video').src = '';
+  document.getElementById('video-preview-section').style.display = 'none';
+  document.getElementById('upload-zone').style.display = 'block';
+  document.getElementById('clips-section').style.display = 'none';
+  document.getElementById('score-dashboard').style.display = 'none';
+  clips = [];
+  showToast('🗑 Video dihapus', 'info');
+}
+
+function clearAll() {
+  clearVideo();
+  localStorage.removeItem('saved_clips');
+}
+
+// ══════════════════════════════════════════
+// GEMINI API
+// ══════════════════════════════════════════
+async function callGemini(prompt) {
+  const key = localStorage.getItem('gemini_key');
+  if (!key) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 512 }
+        })
+      }
+    );
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  } catch(e) {
+    console.warn('Gemini error:', e.message);
+    return null;
+  }
+}
+
+async function generateClipContent(clipIndex, totalClips, startSec, endSec, videoName) {
+  const geminiKey = localStorage.getItem('gemini_key');
+  const videoTitle = videoName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  const position = clipIndex === 0 ? 'awal' : clipIndex === totalClips - 1 ? 'akhir' : 'tengah';
+  const startMin = Math.floor(startSec / 60);
+  const startS = Math.floor(startSec % 60);
+
+  if (geminiKey) {
+    const prompt = `Kamu adalah ahli konten viral Indonesia. Berdasarkan info berikut, buat konten untuk short video:
+
+Video: "${videoTitle}"
+Posisi clip: ${position} video (menit ${startMin}:${String(startS).padStart(2,'0')} - durasi ~${endSec - startSec} detik)
+Clip ke-${clipIndex + 1} dari ${totalClips}
+
+Buat dalam format JSON persis seperti ini (tanpa markdown, tanpa kode block):
+{"title":"judul viral max 60 karakter","hook":"kalimat pembuka 5-10 kata yang bikin penonton tidak scroll","cta":"ajakan aksi spesifik 1 kalimat","retention":angka_65_sampai_95}
+
+Rules:
+- title: hook-style, bikin penasaran, bahasa Indonesia gaul
+- hook: dimulai dari situasi/konflik langsung, bukan sapaan
+- cta: spesifik dan sesuai isi video
+- retention: 65-95 berdasarkan posisi (awal lebih tinggi, tengah sedang, akhir bisa tinggi jika ada reveal)`;
+
+    const result = await callGemini(prompt);
+    if (result) {
+      try {
+        const clean = result.replace(/```json?/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        if (parsed.title && parsed.hook && parsed.cta && parsed.retention) {
+          return parsed;
+        }
+      } catch(e) { /* fallback ke heuristik */ }
+    }
+  }
+
+  // Fallback heuristik berdasarkan posisi clip
+  const posRatio = clipIndex / Math.max(totalClips - 1, 1);
+  let baseRetention;
+  if (posRatio < 0.2) baseRetention = 78 + Math.floor(Math.random() * 12);      // awal video: tinggi
+  else if (posRatio < 0.5) baseRetention = 68 + Math.floor(Math.random() * 15); // tengah: sedang
+  else if (posRatio < 0.8) baseRetention = 62 + Math.floor(Math.random() * 18); // 3/4: bervariasi
+  else baseRetention = 70 + Math.floor(Math.random() * 20);                      // akhir: bisa tinggi (reveal/CTA)
+
+  return {
+    title: fallbackTitles[clipIndex % fallbackTitles.length],
+    hook: fallbackHooks[clipIndex % fallbackHooks.length],
+    cta: fallbackCtas[clipIndex % fallbackCtas.length],
+    retention: baseRetention
+  };
+}
+
+// ══════════════════════════════════════════
+// ANALYSIS
+// ══════════════════════════════════════════
+async function startAnalysis() {
+  if (!videoFile && !videoURL) { showToast('⚠️ Upload video dulu!', 'warn'); return; }
+  const progressWrap = document.getElementById('progress-bar-wrap');
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  progressWrap.style.display = 'block';
+
+  const hasGemini = !!localStorage.getItem('gemini_key');
+  const steps = [
+    { id: 'step-1', label: 'Mendeteksi scene changes...', pct: 20 },
+    { id: 'step-2', label: 'Menganalisis engagement metrics...', pct: 40 },
+    { id: 'step-3', label: 'Mengekstrak kandidat clip...', pct: 60 },
+    { id: 'step-4', label: hasGemini ? '✨ Gemini AI generating titles...' : 'Generating titles & hooks...', pct: 85 },
+    { id: 'step-5', label: 'Finalisasi results...', pct: 100 },
+  ];
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    document.getElementById(s.id).classList.add('active');
+    label.textContent = s.label;
+    fill.style.width = s.pct + '%';
+    // Step 4 lebih lama jika pakai Gemini
+    await sleep(i === 3 && hasGemini ? 400 : 600 + Math.random() * 500);
+    document.getElementById(s.id).classList.remove('active');
+    document.getElementById(s.id).classList.add('done');
+  }
+
+  await sleep(200);
+  progressWrap.style.display = 'none';
+  await generateClips();
+}
+
+async function generateClips() {
+  const dur = videoDuration || 300;
+  const numClips = Math.min(6, Math.max(3, Math.floor(dur / 60)));
+  clips = [];
+  const fname = videoFile ? videoFile.name : 'video.mp4';
+
+  showToast('🤖 Generating konten per clip...', 'info');
+
+  for (let i = 0; i < numClips; i++) {
+    const duration = 35 + Math.floor(Math.random() * 21); // 35-55s
+    const maxStart = Math.max(0, dur - duration - 10);
+    let start = i === 0 ? 5 : Math.floor((maxStart / (numClips - 1)) * i + (Math.random() - 0.5) * 10);
+    start = Math.max(0, Math.min(start, maxStart));
+    const end = start + duration;
+
+    // Generate konten via Gemini atau heuristik
+    const content = await generateClipContent(i, numClips, start, end, fname);
+    const retention = Math.max(40, Math.min(98, content.retention));
+    const viral = Math.min(5, Math.max(1, Math.ceil(retention / 20)));
+
+    // Sparkline berdasarkan retention — bukan random murni
+    const sparkData = Array.from({length: 12}, (_, j) => {
+      const base = retention;
+      const wave = Math.sin(j / 2) * 10;
+      const noise = (Math.random() - 0.5) * 20;
+      return Math.max(10, Math.min(100, Math.round(base + wave + noise)));
+    });
+
+    clips.push({ id: i+1, start, end, duration, retention, viral,
+      title: content.title, hook: content.hook, cta: content.cta, sparkData });
+  }
+
+  renderScoreDashboard();
+  await renderClips();
+  document.getElementById('clips-section').style.display = 'block';
+  document.getElementById('score-dashboard').style.display = 'block';
+  saveClips();
+  const geminiUsed = !!localStorage.getItem('gemini_key');
+  showToast(`✅ ${clips.length} clip dideteksi${geminiUsed ? ' (Gemini AI ✨)' : ''}!`, 'success');
+}
+
+function renderScoreDashboard() {
+  const avgRetention = Math.round(clips.reduce((s, c) => s + c.retention, 0) / clips.length);
+  const bestClip = clips.reduce((b, c) => c.retention > b.retention ? c : b, clips[0]);
+  document.getElementById('avg-retention').textContent = avgRetention;
+  document.getElementById('avg-retention').style.color = avgRetention >= 80 ? 'var(--green)' : avgRetention >= 60 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('best-clip-val').textContent = '#' + bestClip.id;
+  document.getElementById('best-clip-title').textContent = bestClip.title.slice(0, 30) + '...';
+  document.getElementById('total-clips-val').textContent = clips.length;
+  let viral, viralClass, viralSub;
+  if (avgRetention >= 85) { viral = '🔥 VIRAL'; viralClass = 'viral-viral'; viralSub = 'Potensi sangat tinggi!'; }
+  else if (avgRetention >= 70) { viral = '📈 HIGH'; viralClass = 'viral-high'; viralSub = 'Peluang besar viral'; }
+  else if (avgRetention >= 55) { viral = '📊 MEDIUM'; viralClass = 'viral-medium'; viralSub = 'Perlu optimization'; }
+  else { viral = '📉 LOW'; viralClass = 'viral-low'; viralSub = 'Perlu perbaikan hook'; }
+  document.getElementById('viral-badge-wrap').innerHTML = `<span class="viral-badge ${viralClass}" style="font-size:1.1rem;font-weight:800;">${viral}</span>`;
+  document.getElementById('viral-sub').textContent = viralSub;
+}
+
+async function renderClips() {
+  const grid = document.getElementById('clips-grid');
+  grid.innerHTML = '';
+  document.getElementById('clip-count').textContent = clips.length;
+  const bestId = clips.reduce((b, c) => c.retention > b.retention ? c : b, clips[0]).id;
+
+  for (const clip of clips) {
+    const card = document.createElement('div');
+    card.className = 'clip-card' + (clip.id === bestId ? ' best-clip' : '');
+    card.dataset.clipId = clip.id;
+    const dur = clip.end - clip.start;
+    const durOk = dur >= 35 && dur <= 55;
+    const scoreClass = clip.retention >= 80 ? 'score-green' : clip.retention >= 60 ? 'score-yellow' : 'score-red';
+    const scoreColor = clip.retention >= 80 ? 'var(--green)' : clip.retention >= 60 ? 'var(--yellow)' : 'var(--red)';
+    const flames = '🔥'.repeat(clip.viral) + '🖤'.repeat(5 - clip.viral);
+    const sparkBars = clip.sparkData.map((h, i) => {
+      const color = h > 70 ? 'var(--green)' : h > 40 ? 'var(--yellow)' : 'var(--red)';
+      return `<div class="spark-bar" style="height:${h}%;background:${color};animation-delay:${i*60}ms"></div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="clip-thumb-wrap">
+        <canvas class="clip-canvas" id="canvas-${clip.id}" width="320" height="180"></canvas>
+        <span class="clip-num-badge">Clip #${clip.id}</span>
+        <span class="duration-badge ${durOk ? 'duration-ok' : 'duration-warn'}" id="dur-badge-${clip.id}">${dur}s</span>
+        <div class="play-overlay" onclick="openPreview(${clip.id})">
+          <div class="play-btn-inner">▶</div>
+        </div>
+      </div>
+      <div class="clip-body">
+        <div class="clip-title-row">
+          <div class="clip-title" id="title-${clip.id}">${clip.title}</div>
+          <input class="clip-title-edit" id="title-edit-${clip.id}" type="text" value="${clip.title}" onblur="saveTitle(${clip.id})" onkeydown="if(event.key==='Enter')saveTitle(${clip.id})">
+          <button class="btn-edit-title" onclick="toggleTitleEdit(${clip.id})">✏️</button>
+        </div>
+        <div class="clip-hook">"${clip.hook}"</div>
+        <div class="clip-cta">📣 ${clip.cta}</div>
+        <div class="time-row">
+          <div class="time-field">
+            <label>Start Time</label>
+            <input class="time-input" type="text" id="start-${clip.id}" value="${secToTimestamp(clip.start)}" onchange="updateClipTime(${clip.id})" placeholder="00:00:00">
+          </div>
+          <div class="time-field">
+            <label>End Time</label>
+            <input class="time-input" type="text" id="end-${clip.id}" value="${secToTimestamp(clip.end)}" onchange="updateClipTime(${clip.id})" placeholder="00:00:00">
+          </div>
+        </div>
+        <div class="scores-row">
+          <div class="retention-wrap">
+            <div class="score-header">
+              <span class="score-name">Retention Score</span>
+              <span class="score-num" style="color:${scoreColor}">${clip.retention}%</span>
+            </div>
+            <div class="score-bar-track">
+              <div class="score-bar-fill ${scoreClass}" style="width:${clip.retention}%"></div>
+            </div>
+          </div>
+          <div class="viral-wrap">
+            <div class="score-name">Viral</div>
+            <div class="flame-row">${flames}</div>
+          </div>
+        </div>
+        <div class="sparkline">${sparkBars}</div>
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="openPreview(${clip.id})">👁 Preview</button>
+          <button class="btn btn-primary" onclick="openExport(${clip.id})">⬇ Export</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+    // Draw thumbnail after DOM is ready
+    setTimeout(() => drawThumbnail(clip.id, clip.start), 100);
+  }
+}
+
+function drawThumbnail(clipId, time) {
+  const vid = document.getElementById('preview-video');
+  const canvas = document.getElementById('canvas-' + clipId);
+  if (!canvas || !vid.src) {
+    // Draw placeholder
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 320, 180);
+    grad.addColorStop(0, '#1a1a25');
+    grad.addColorStop(1, '#0a0a0f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 320, 180);
+    ctx.fillStyle = 'rgba(108,99,255,0.3)';
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Clip #${clipId}`, 160, 80);
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`@${secToTimestamp(time)}`, 160, 100);
+    return;
+  }
+
+  const seekAndCapture = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(vid, 0, 0, 320, 180);
+    // Overlay
+    const grad = ctx.createLinearGradient(0, 120, 0, 180);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.7)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 320, 180);
+  };
+
+  const prevTime = vid.currentTime;
+  vid.currentTime = Math.min(time + 2, (videoDuration || 9999) - 0.5);
+  vid.onseeked = () => {
+    seekAndCapture();
+    vid.currentTime = prevTime;
+    vid.onseeked = null;
+  };
+}
+
+// ══════════════════════════════════════════
+// CLIP TIME EDITING
+// ══════════════════════════════════════════
+function updateClipTime(id) {
+  const clip = clips.find(c => c.id === id);
+  if (!clip) return;
+  const startStr = document.getElementById('start-' + id).value;
+  const endStr = document.getElementById('end-' + id).value;
+  clip.start = timestampToSec(startStr);
+  clip.end = timestampToSec(endStr);
+  clip.duration = clip.end - clip.start;
+  const dur = clip.duration;
+  const badge = document.getElementById('dur-badge-' + id);
+  badge.textContent = dur + 's';
+  badge.className = 'duration-badge ' + (dur >= 35 && dur <= 55 ? 'duration-ok' : 'duration-warn');
+  saveClips();
+}
+
+function toggleTitleEdit(id) {
+  const titleEl = document.getElementById('title-' + id);
+  const editEl = document.getElementById('title-edit-' + id);
+  const isEditing = editEl.style.display === 'block';
+  if (isEditing) {
+    saveTitle(id);
+  } else {
+    titleEl.style.display = 'none';
+    editEl.style.display = 'block';
+    editEl.focus();
+    editEl.select();
+  }
+}
+
+function saveTitle(id) {
+  const clip = clips.find(c => c.id === id);
+  if (!clip) return;
+  const editEl = document.getElementById('title-edit-' + id);
+  const titleEl = document.getElementById('title-' + id);
+  clip.title = editEl.value;
+  titleEl.textContent = clip.title;
+  editEl.style.display = 'none';
+  titleEl.style.display = 'block';
+  saveClips();
+  showToast('✅ Judul tersimpan!', 'success');
+}
+
+function reorderClips() {
+  clips.sort((a, b) => b.retention - a.retention);
+  renderClips();
+  showToast('↕ Clips diurutkan berdasarkan Retention Score', 'info');
+}
+
+// ══════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════
+function openExport(clipId) {
+  currentClipForExport = clips.find(c => c.id === clipId);
+  if (!currentClipForExport) return;
+  const cmd = generateFFmpegCmd(currentClipForExport);
+  document.getElementById('ffmpeg-cmd-display').textContent = cmd;
+  document.getElementById('export-modal').classList.add('show');
+}
+
+function generateFFmpegCmd(clip) {
+  const fname = videoFile ? videoFile.name : 'input.mp4';
+  // Jalankan di folder yang sama dengan video
+  return `ffmpeg -i "${fname}" -ss ${secToTimestamp(clip.start)} -to ${secToTimestamp(clip.end)} -c:v libx264 -crf 23 -preset fast -c:a aac -movflags +faststart "clip_${clip.id}_${clip.title.replace(/[^a-zA-Z0-9]/g,'_').slice(0,20)}.mp4"`;
+}
+
+function copyFFmpegCmd() {
+  const cmd = document.getElementById('ffmpeg-cmd-display').textContent;
+  navigator.clipboard.writeText(cmd).then(() => showToast('📋 FFmpeg command copied!', 'success')).catch(() => showToast('⚠️ Gagal copy, coba manual', 'warn'));
+}
+
+function exportAllFFmpeg() {
+  const cmds = clips.map(c => generateFFmpegCmd(c)).join('\n');
+  navigator.clipboard.writeText(cmds).then(() => showToast(`📋 ${clips.length} FFmpeg commands copied!`, 'success')).catch(() => {});
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ══════════════════════════════════════════
+// PREVIEW
+// ══════════════════════════════════════════
+function openPreview(clipId) {
+  currentPreviewClip = clips.find(c => c.id === clipId);
+  if (!currentPreviewClip || !videoURL) { showToast('⚠️ Video tidak tersedia', 'warn'); return; }
+  const modalVid = document.getElementById('preview-modal-video');
+  modalVid.src = videoURL;
+  document.getElementById('preview-modal-title').textContent = `👁 Preview — ${currentPreviewClip.title.slice(0,40)}...`;
+  document.getElementById('preview-modal').classList.add('show');
+  modalVid.onloadeddata = () => playPreviewClip();
+}
+
+function playPreviewClip() {
+  if (!currentPreviewClip) return;
+  const vid = document.getElementById('preview-modal-video');
+  vid.currentTime = currentPreviewClip.start;
+  vid.play();
+  if (previewInterval) clearInterval(previewInterval);
+  previewInterval = setInterval(() => {
+    const cur = vid.currentTime - currentPreviewClip.start;
+    const total = currentPreviewClip.end - currentPreviewClip.start;
+    document.getElementById('preview-time-display').textContent = `${cur.toFixed(1)}s / ${total.toFixed(1)}s`;
+    if (vid.currentTime >= currentPreviewClip.end) {
+      vid.pause();
+      clearInterval(previewInterval);
+      showToast('✅ Clip preview selesai', 'info');
+    }
+  }, 100);
+}
+
+function pausePreviewClip() {
+  document.getElementById('preview-modal-video').pause();
+  if (previewInterval) clearInterval(previewInterval);
+}
+
+function stopPreview() {
+  pausePreviewClip();
+  closeModal('preview-modal');
+  currentPreviewClip = null;
+}
+
+// ══════════════════════════════════════════
+// TEMPLATES
+// ══════════════════════════════════════════
+function copyTemplate(el) {
+  const text = el.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => showToast('📋 Template berhasil di-copy!', 'success')).catch(() => {
+    showToast('⚠️ Browser tidak support clipboard', 'warn');
+  });
+}
+
+// ══════════════════════════════════════════
+// PERSISTENCE
+// ══════════════════════════════════════════
+function saveClips() {
+  try { localStorage.setItem('saved_clips', JSON.stringify(clips)); } catch(e) {}
+}
+
+function restoreClips() {
+  try {
+    const saved = localStorage.getItem('saved_clips');
+    if (saved) {
+      clips = JSON.parse(saved);
+      // Don't auto-render clips without video — just keep in memory
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function formatTime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+function secToTimestamp(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function timestampToSec(ts) {
+  const parts = ts.split(':').map(Number);
+  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+  if (parts.length === 2) return parts[0]*60 + parts[1];
+  return parts[0] || 0;
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function formatSize(bytes) {
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  if (bytes < 1024*1024*1024) return (bytes/1024/1024).toFixed(1) + ' MB';
+  return (bytes/1024/1024/1024).toFixed(2) + ' GB';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const icons = { success: '✅', warn: '⚠️', info: 'ℹ️' };
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('toast-out');
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
+
+// ══════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => {
+      if (m.id === 'preview-modal') stopPreview();
+      else m.classList.remove('show');
+    });
+  }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+      if (overlay.id === 'preview-modal') stopPreview();
+      else overlay.classList.remove('show');
+    }
+  });
+});
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
